@@ -48,61 +48,53 @@ public_users.get('/isbn/:isbn', function (req, res) {
 });
 
 // Get book details based on author
-public_users.get('/author/:author', function (req, res) {
-  let reqAuthor = req.params.author;
-  reqAuthor = reqAuthor.replaceAll('_', ' ')
-  let bookByAuthor;
-  let certainBookPromise2 = new Promise((resolve, reject) => {
-    for (let i = 1; i <= 10; i++) {
-      if (books[i].author == reqAuthor)
-        {bookByAuthor = books[i]; resolve();}
-      if ((i == 10) && (books[i].author != reqAuthor))
-        {reject();}
+public_users.get('/author/:author', async function (req, res) {
+  try {
+    const reqAuthor = req.params.author.replaceAll('_', ' ');
+    const keys = Object.keys(books);
+    const booksByAuthor = keys
+      .filter(key => books[key].author === reqAuthor)
+      .map(key => books[key]);
+
+    if (booksByAuthor.length > 0) {
+      return res.status(200).send(JSON.stringify(booksByAuthor, null, 4));
+    } else {
+      return res.status(404).json({ message: "There is no book stored by this author." });
     }
-  })
-  function onFulfilled(){
-    res.send(JSON.stringify(bookByAuthor, null, 4));
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving book details." });
   }
-  function onRejected(){
-    res.status(404).json({message: "There is no book stored by this author."});
-  }
-  certainBookPromise2.then(onFulfilled, onRejected);
 });
 
 // Get all books based on title
-public_users.get('/title/:title', function (req, res) {
-  let reqTitle = req.params.title;
-  reqTitle = reqTitle.replaceAll('_', ' ');
-  let bookByTitle;
+public_users.get('/title/:title', async function (req, res) {
+  try {
+    const reqTitle = req.params.title.replaceAll('_', ' ');
+    const keys = Object.keys(books);
+    const booksByTitle = keys
+      .filter(key => books[key].title === reqTitle)
+      .map(key => books[key]);
 
-  let certainBookPromise3 = new Promise((resolve, reject) => {
-    var loopTitle = "";
-    for (let i = 1; i <= 10; i++) {
-      loopTitle = books[i].title;
-      loopTitle = loopTitle.replaceAll('_', ' ');
-      if (loopTitle == reqTitle) {
-        bookByTitle = books[i];
-        resolve();
-      }
-      if ((i == 10) && (loopTitle != reqTitle)) {
-        reject();
-      }
+    if (booksByTitle.length > 0) {
+      return res.status(200).send(JSON.stringify(booksByTitle, null, 4));
+    } else {
+      return res.status(404).json({ message: "There is no book with this title stored." });
     }
-  })
-  function onFulfilled(){
-    return res.send(JSON.stringify(bookByTitle, null, 4));
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving book details." });
   }
-  function onRejected(){
-    res.status(404).json({ message: "There is no book with this title stored." });
-  }
-  certainBookPromise3.then(onFulfilled, onRejected);
 });
 
 //  Get book review
 public_users.get('/review/:isbn', function (req, res) {
   let reqISBN = req.params.isbn;
-  res.send(JSON.stringify(books[reqISBN].reviews, null, 4));
+  const book = books[reqISBN];
+  
+  if (book) {
+    res.status(200).send(JSON.stringify(book.reviews, null, 4));
+  } else {
+    res.status(404).json({ message: "No reviews found. The book with the provided ISBN does not exist." });
+  }
 });
 
 module.exports.general = public_users;
-
